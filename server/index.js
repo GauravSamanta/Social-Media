@@ -40,6 +40,7 @@ const upload = multer({ storage });
 
 app.post("/auth/register", upload.single("picture"), register);
 
+
 const PORT = process.env.PORT || 5000;
 
 const start = async () => {
