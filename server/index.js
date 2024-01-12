@@ -1,22 +1,23 @@
 const express = require("express");
+
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const dotenv = require("dotenv");
 const multer = require("multer");
 const helmet = require("helmet");
 const morgan = require("morgan");
+
 const path = require("path");
-const mongoose = require("mongoose");
-const {fileURLToPath} = require("url");
-const {register} = require("./controllers/auth");
+require("dotenv").config();
 
+const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/users");
+const postRoutes = require("./routes/posts");
+const connectDB = require("./db/connect");
 
+const { register } = require("./controllers/auth");
+const { verifyToken } = require("./middleware/auth");
+const { createPost } = require("./controllers/posts");
 
-const __filename=fileURLToPath(import.meta.url);
-const __dirname=path.dirname(__filename);
-
-
-dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(helmet());
@@ -39,13 +40,18 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 app.post("/auth/register", upload.single("picture"), register);
+app.post("/posts", verifyToken, upload.single("picture"), createPost);
 
+/* ROUTES */
+app.use("/auth", authRoutes);
+app.use("/users", userRoutes);
+app.use("/posts", postRoutes);
 
 const PORT = process.env.PORT || 5000;
 
 const start = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await connectDB(process.env.MONGO_URI);
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
@@ -53,3 +59,5 @@ const start = async () => {
     console.log(error);
   }
 };
+
+start();
